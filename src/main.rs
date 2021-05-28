@@ -31,9 +31,7 @@ async fn main() -> io::Result<()> {
     let listener = tokio::net::TcpListener::bind("0.0.0.0:7890").await?;
 
     loop {
-        match listener.accept().await {
-            Ok((socket, addr)) => process_socket(socket, addr).await,
-            Err(e) => println!("couldn't get client: {:?}", e),
-        }
+        let (socket, addr) = listener.accept().await?;
+        tokio::spawn(async move { process_socket(socket, addr).await });
     }
 }
