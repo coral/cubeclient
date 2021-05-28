@@ -2,6 +2,7 @@ use tokio;
 
 use clap::{AppSettings, Clap};
 use tokio::io::AsyncReadExt;
+use tokio::sync::broadcast;
 mod util;
 use log::{error, info, warn};
 use pretty_env_logger;
@@ -19,10 +20,13 @@ struct Opts {
     listen: String,
 }
 
-async fn process_socket(mut stream: tokio::net::TcpStream, addr: std::net::SocketAddr) {
+async fn process_socket(
+    mut stream: tokio::net::TcpStream,
+    pipe: &tokio::sync::broadcast::Sender<Vec<util::Color>>,
+) {
     loop {
         let channel = stream.read_u8().await.unwrap();
-        let command = stream.read_u8().await.unwrap();
+        let _command = stream.read_u8().await.unwrap();
         let size = stream.read_u16().await.unwrap();
         let mut data = vec![0u8; size as usize];
         stream.read_exact(&mut data).await;
@@ -36,7 +40,7 @@ async fn process_socket(mut stream: tokio::net::TcpStream, addr: std::net::Socke
             })
             .collect();
 
-        dbg!(m);
+        pipe.send(m).expect("LUL");
     }
 }
 
@@ -51,13 +55,18 @@ async fn main() {
     info!("OPC Server listening on: {}", listenaddr);
 
     //SPI setup
+    if cfg!(linux) {
+        dbg!("KEK");
+    }
+
+    let (tx, _) = broadcast::channel(16);
 
     let server = tokio::spawn(async move {
         let listener = tokio::net::TcpListener::bind(&opts.listen).await.unwrap();
 
         loop {
             match listener.accept().await {
-                Ok((socket, addr)) => process_socket(socket, addr).await,
+                Ok((socket, _addr)) => process_socket(socket, &tx).await,
                 Err(v) => {
                     error!("Socket: {}", v);
                 }
@@ -74,5 +83,5 @@ async fn main() {
         }
     });
 
-    tokio::join!(server, advertiser);
+    let _ = tokio::join!(server, advertiser);
 }
