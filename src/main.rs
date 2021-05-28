@@ -1,9 +1,23 @@
 use tokio;
 
-use std::error::Error;
-use std::io;
-use tokio::{io::AsyncRead, io::AsyncReadExt, net::TcpListener, net::TcpStream, task};
+use clap::{AppSettings, Clap};
+use tokio::io::AsyncReadExt;
 mod util;
+use log::{error, info, warn};
+use pretty_env_logger;
+use std::env;
+use std::net::ToSocketAddrs;
+use std::time::Duration;
+use zeroconf::prelude::*;
+use zeroconf::{MdnsService, ServiceRegistration, TxtRecord};
+
+#[derive(Clap)]
+#[clap(setting = AppSettings::ColoredHelp)]
+struct Opts {
+    /// Sets a custom config file. Could have been an Option<T> with no default too
+    #[clap(short, long, default_value = "0.0.0.0:7890")]
+    listen: String,
+}
 
 async fn process_socket(mut stream: tokio::net::TcpStream, addr: std::net::SocketAddr) {
     loop {
@@ -27,11 +41,36 @@ async fn process_socket(mut stream: tokio::net::TcpStream, addr: std::net::Socke
 }
 
 #[tokio::main]
-async fn main() -> io::Result<()> {
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:7890").await?;
+async fn main() {
+    env::set_var("RUST_LOG", "debug");
+    pretty_env_logger::init();
+    let opts: Opts = Opts::parse();
 
-    loop {
-        let (socket, addr) = listener.accept().await?;
-        tokio::spawn(async move { process_socket(socket, addr).await });
-    }
+    //Monstrosity
+    let listenaddr = opts.listen.to_socket_addrs().unwrap().next().unwrap();
+    info!("OPC Server listening on: {}", listenaddr);
+
+    let server = tokio::spawn(async move {
+        let listener = tokio::net::TcpListener::bind(&opts.listen).await.unwrap();
+
+        loop {
+            match listener.accept().await {
+                Ok((socket, addr)) => process_socket(socket, addr).await,
+                Err(v) => {
+                    error!("Socket: {}", v);
+                }
+            }
+        }
+    });
+
+    let advertiser = tokio::spawn(async move {
+        let mut service = MdnsService::new("_opc._tcp", listenaddr.port());
+        let event_loop = service.register().unwrap();
+
+        loop {
+            event_loop.poll(Duration::from_secs(5)).unwrap();
+        }
+    });
+
+    tokio::join!(server, advertiser);
 }
