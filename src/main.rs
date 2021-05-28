@@ -9,7 +9,7 @@ use std::env;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 use zeroconf::prelude::*;
-use zeroconf::{MdnsService, ServiceRegistration, TxtRecord};
+use zeroconf::MdnsService;
 
 #[derive(Clap)]
 #[clap(setting = AppSettings::ColoredHelp)]
@@ -49,6 +49,8 @@ async fn main() {
     //Monstrosity
     let listenaddr = opts.listen.to_socket_addrs().unwrap().next().unwrap();
     info!("OPC Server listening on: {}", listenaddr);
+
+    //SPI setup
 
     let server = tokio::spawn(async move {
         let listener = tokio::net::TcpListener::bind(&opts.listen).await.unwrap();
