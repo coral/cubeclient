@@ -1,16 +1,15 @@
-use tokio;
-
 use clap::{AppSettings, Clap};
-use tokio::io::AsyncReadExt;
-use tokio::sync::broadcast;
-mod util;
 use log::{error, info, warn};
 use pretty_env_logger;
 use std::env;
 use std::net::ToSocketAddrs;
 use std::time::Duration;
-use zeroconf::prelude::*;
-use zeroconf::MdnsService;
+use tokio;
+use tokio::io::AsyncReadExt;
+use tokio::sync::broadcast;
+
+mod apa;
+mod util;
 
 #[derive(Clap)]
 #[clap(setting = AppSettings::ColoredHelp)]
@@ -18,6 +17,8 @@ struct Opts {
     /// Sets a custom config file. Could have been an Option<T> with no default too
     #[clap(short, long, default_value = "0.0.0.0:7890")]
     listen: String,
+
+    channels: u8,
 }
 
 async fn process_socket(
@@ -74,14 +75,14 @@ async fn main() {
         }
     });
 
-    let advertiser = tokio::spawn(async move {
-        let mut service = MdnsService::new("_opc._tcp", listenaddr.port());
-        let event_loop = service.register().unwrap();
+    // let advertiser = tokio::spawn(async move {
+    //     let mut service = MdnsService::new("_opc._tcp", listenaddr.port());
+    //     let event_loop = service.register().unwrap();
 
-        loop {
-            event_loop.poll(Duration::from_secs(5)).unwrap();
-        }
-    });
+    //     loop {
+    //         event_loop.poll(Duration::from_secs(5)).unwrap();
+    //     }
+    // });
 
-    let _ = tokio::join!(server, advertiser);
+    let _ = tokio::join!(server);
 }
