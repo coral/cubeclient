@@ -8,7 +8,9 @@ use tokio;
 use tokio::io::AsyncReadExt;
 use tokio::sync::broadcast;
 
+#[cfg(target_os = "linux")]
 mod apa;
+
 mod util;
 
 #[derive(Clap)]
@@ -55,12 +57,11 @@ async fn main() {
     let listenaddr = opts.listen.to_socket_addrs().unwrap().next().unwrap();
     info!("OPC Server listening on: {}", listenaddr);
 
-    //SPI setup
-    if cfg!(linux) {
-        dbg!("KEK");
-    }
-
     let (tx, _) = broadcast::channel(16);
+
+    //setup apa
+    #[cfg(target_os = "linux")]
+    apa::Manager::bootstrap(&opts.channels, tx.subscribe());
 
     let server = tokio::spawn(async move {
         let listener = tokio::net::TcpListener::bind(&opts.listen).await.unwrap();
