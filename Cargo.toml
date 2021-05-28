@@ -11,6 +11,3 @@ clap = "3.0.0-beta.2"
 log = "0.4.14"
 pretty_env_logger = "0.4.0"
 tokio = {version= "1.6.0", features = ["full"] }
-
-[target.armv7-unknown-linux-gnueabihf]
-blinkt = "0.6.0"

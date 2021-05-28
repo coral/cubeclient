@@ -14,10 +14,10 @@ mod util;
 #[derive(Clap)]
 #[clap(setting = AppSettings::ColoredHelp)]
 struct Opts {
-    /// Sets a custom config file. Could have been an Option<T> with no default too
     #[clap(short, long, default_value = "0.0.0.0:7890")]
     listen: String,
 
+    #[clap(short, long, default_value = "1")]
     channels: u8,
 }
 
