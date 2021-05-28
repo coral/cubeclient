@@ -35,8 +35,7 @@ checksum = "cf1de2fe8c75bc145a2f577add951f8134889b4795d47466a54a5c846d691693"
 [[package]]
 name = "blinkt"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0244479e73baf439088b606c46cef26eaeaf6c0182f3ff3541911f55a4acbbfc"
+source = "git+https://github.com/coral/blinkt.git#214ba50540f02a1901257fd1a618e8bc0f7e2a83"
 dependencies = [
  "rppal",
 ]
@@ -93,6 +92,7 @@ dependencies = [
  "clap",
  "log",
  "pretty_env_logger",
+ "rppal",
  "tokio",
 ]
 

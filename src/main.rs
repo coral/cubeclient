@@ -43,7 +43,7 @@ async fn process_socket(
             })
             .collect();
 
-        pipe.send(m).expect("LUL");
+        pipe.send(m);
     }
 }
 
@@ -61,7 +61,11 @@ async fn main() {
 
     //setup apa
     #[cfg(target_os = "linux")]
-    apa::Manager::bootstrap(&opts.channels, tx.subscribe());
+    let mut op = apa::Manager::bootstrap(144, opts.channels, 8_000_000, tx.subscribe());
+    #[cfg(target_os = "linux")]
+    let output = tokio::spawn(async move {
+        op.spin().await;
+    });
 
     let server = tokio::spawn(async move {
         let listener = tokio::net::TcpListener::bind(&opts.listen).await.unwrap();
@@ -84,6 +88,6 @@ async fn main() {
     //         event_loop.poll(Duration::from_secs(5)).unwrap();
     //     }
     // });
-
-    let _ = tokio::join!(server);
+    #[cfg(target_os = "linux")]
+    let _ = tokio::join!(server, output);
 }

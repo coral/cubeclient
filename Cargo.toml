@@ -13,5 +13,6 @@ pretty_env_logger = "0.4.0"
 tokio = {version= "1.6.0", features = ["full"] }
 
 
-[target.'cfg(linux)'.dependencies]
-blinkt = "0.6.0"
+[target.'cfg(target_arch = "arm")'.dependencies]
+blinkt = {git = "https://github.com/coral/blinkt.git"}
+rppal = "0.12.0"
